@@ -1,17 +1,23 @@
 # Use the official Eclipse Mosquitto image as the base
-FROM eclipse-mosquitto:latest
+FROM python:3.11-slim
 
-# Set the maintainer label
+# Install mosquitto broker
 LABEL maintainer="johnscode <iotagg@johnscode.com>"
+RUN apt-get update \
+	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mosquitto \
+	&& rm -rf /var/lib/apt/lists/*
 
-# Expose MQTT port
-EXPOSE 1883
+WORKDIR /app
 
-# Expose MQTT over WebSockets port (if needed)
-EXPOSE 9001
-
-# Copy custom configuration file (if you have one)
+# Copy configuration and health check
 COPY mosquitto.conf /mosquitto/config/mosquitto.conf
+COPY health/health.py /app/health.py
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
-# Set the entrypoint to run Mosquitto
-ENTRYPOINT ["/usr/sbin/mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
+# Expose MQTT, WebSockets and health ports
+EXPOSE 1883
+EXPOSE 9001
+EXPOSE 8080
+
+CMD ["/app/start.sh"]
