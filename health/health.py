@@ -3,13 +3,20 @@ import socket
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-TARGET_HOST = os.getenv('TARGET_HOST', 'mosquitto')
+TARGET_HOST = os.getenv('TARGET_HOST', 'localhost')
 TARGET_PORT = int(os.getenv('TARGET_PORT', '1883'))
 LISTEN_PORT = int(os.getenv('PORT', '8080'))
 TIMEOUT = float(os.getenv('TIMEOUT', '2'))
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        # Log client address for debugging health probes
+        try:
+            client = self.client_address[0]
+        except Exception:
+            client = 'unknown'
+        print(f"Health request from {client} to path {self.path}")
+
         if self.path != '/health':
             self.send_response(404)
             self.end_headers()
